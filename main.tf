@@ -3,6 +3,12 @@ data "google_project" "provider_default" {
 
 locals {
   project_id = var.google_project_id == "" ? data.google_project.provider_default.project_id : var.google_project_id
+
+  pool_suffix = var.random_workload_identity_suffix ? random_id.suffix.hex : ""
+}
+
+resource "random_id" "suffix" {
+  byte_length = 2
 }
 
 // Providers define the scopes at which Chainguard services may impersonate
@@ -16,7 +22,7 @@ resource "google_iam_workload_identity_pool_provider" "chainguard_provider" {
   project                            = local.project_id
   provider                           = google-beta
   workload_identity_pool_id          = google_iam_workload_identity_pool.chainguard_pool.workload_identity_pool_id
-  workload_identity_pool_provider_id = "chainguard-provider" # This gets 4-32 alphanumeric characters (and '-')
+  workload_identity_pool_provider_id = "chainguard-provider${local.pool_suffix}" # This gets 4-32 alphanumeric characters (and '-')
   display_name                       = "Chainguard provider"
   description                        = "This is the provider for impersonation by the ${var.enforce_domain_name} Chainguard environment's issuer for ${var.enforce_domain_name}."
 
@@ -41,7 +47,7 @@ resource "google_project_service" "iamcredentials-api" {
 resource "google_iam_workload_identity_pool" "chainguard_pool" {
   project                   = local.project_id
   provider                  = google-beta
-  workload_identity_pool_id = "chainguard-pool"
+  workload_identity_pool_id = "chainguard-pool${local.pool_suffix}"
   display_name              = "Chainguard Pool"
   description               = "Identity pool for Chainguard impersonation."
   depends_on                = [google_project_service.iamcredentials-api]

@@ -25,3 +25,9 @@ variable "google_project_id" {
   sensitive   = false
   nullable    = false
 }
+
+variable "random_workload_identity_suffix" {
+  type        = bool
+  default     = false
+  description = "When enabled, adds a random sufix of 4 random characters to the created Workload Identity Pool and Pool Provider."
+}
